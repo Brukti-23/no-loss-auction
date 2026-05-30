@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>No-Loss Auction | Stellar Kenya Bootcamp</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d0d1a;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    header {
+      text-align: center;
+      padding: 30px 0;
+      margin-bottom: 30px;
+      border-bottom: 1px solid #1e1e3a;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      color: #7c6ff7;
+      margin-bottom: 6px;
+    }
+
+    header p { color: #666; font-size: 0.9rem; }
+
+    .container { max-width: 680px; margin: 0 auto; }
+
+    .card {
+      background: #13132b;
+      border: 1px solid #1e1e3a;
+      border-radius: 14px;
+      padding: 22px;
+      margin-bottom: 18px;
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      color: #a39df5;
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.82rem;
+      color: #888;
+      margin-top: 12px;
+      margin-bottom: 4px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      background: #0a0a18;
+      border: 1px solid #1e1e3a;
+      border-radius: 8px;
+      color: #e0e0e0;
+      font-size: 0.92rem;
+    }
+
+    input:focus { outline: none; border-color: #7c6ff7; }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .purple { background: #7c6ff7; color: #fff; }
+    .green  { background: #16a34a; color: #fff; }
+    .red    { background: #dc2626; color: #fff; }
+    .yellow { background: #d97706; color: #fff; }
+    .dark   { background: #1e1e3a; color: #a39df5;
+               border: 1px solid #7c6ff7; }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #1a1a30;
+      font-size: 0.88rem;
+    }
+
+    .info-row:last-child { border-bottom: none; }
+    .info-row .label    { color: #666; }
+    .info-row .value    { color: #e0e0e0; }
+
+    .info-box {
+      background: #0a0a18;
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 12px;
+    }
+
+    #walletAddr {
+      font-size: 0.78rem;
+      color: #7c6ff7;
+      margin-top: 8px;
+      word-break: break-all;
+    }
+
+    #log {
+      background: #050510;
+      border-radius: 8px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: #4ade80;
+      min-height: 80px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .badge {
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+    .active    { background:#14532d; color:#4ade80; }
+    .finalized { background:#1e3a5f; color:#60a5fa; }
+    .cancelled { background:#450a0a; color:#f87171; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🏆 No-Loss Auction</h1>
+  <p>Stellar Kenya Blockchain Bootcamp — Week 3 Project</p>
+</header>
+
+<div class="container">
+
+  <!-- STEP 1: Connect Wallet -->
+  <div class="card">
+    <h2>🔗 Step 1 — Connect Your Wallet</h2>
+    <p style="font-size:0.83rem;color:#666;margin-bottom:4px;">
+      You need the Freighter browser extension to use this app.
+    </p>
+    <button class="dark" onclick="connectWallet()">
+      Connect Freighter Wallet
+    </button>
+    <div id="walletAddr">Not connected yet</div>
+  </div>
+
+  <!-- AUCTION STATUS -->
+  <div class="card">
+    <h2>📊 Auction Status</h2>
+    <button class="purple" style="margin-top:0" onclick="loadStatus()">
+      🔄 Refresh Status
+    </button>
+    <div class="info-box">
+      <div class="info-row">
+        <span class="label">Item Name</span>
+        <span class="value" id="sItem">—</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Minimum Bid</span>
+        <span class="value" id="sMinBid">—</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Highest Bid</span>
+        <span class="value" id="sHighBid">—</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Highest Bidder</span>
+        <span class="value" id="sBidder">—</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Deadline Ledger</span>
+        <span class="value" id="sDeadline">—</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Status</span>
+        <span class="value" id="sStatus">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREATE AUCTION -->
+  <div class="card">
+    <h2>🆕 Create Auction</h2>
+
+    <label>Item Name</label>
+    <input id="itemName" type="text" placeholder="e.g. Vintage Guitar" />
+
+    <label>Minimum Bid (in tokens)</label>
+    <input id="minBid" type="number" placeholder="e.g. 100" />
+
+    <label>Duration (in ledgers — 1000 ledgers ≈ 1 hour)</label>
+    <input id="duration" type="number" placeholder="e.g. 1000" />
+
+    <label>SEP-41 Token Contract Address</label>
+    <input id="tokenAddr" type="text" placeholder="C..." />
+
+    <button class="purple" onclick="createAuction()">
+      Create Auction
+    </button>
+  </div>
+
+  <!-- PLACE BID -->
+  <div class="card">
+    <h2>💰 Place a Bid</h2>
+    <p style="font-size:0.82rem;color:#666;margin-bottom:6px;">
+      If someone outbids you later, your tokens come back automatically.
+      That is what makes this no-loss!
+    </p>
+
+    <label>How many tokens do you want to bid?</label>
+    <input id="bidAmt" type="number" placeholder="e.g. 200" />
+
+    <button class="green" onclick="placeBid()">
+      Place My Bid
+    </button>
+  </div>
+
+  <!-- FINALIZE -->
+  <div class="card">
+    <h2>✅ Finalize Auction</h2>
+    <p style="font-size:0.82rem;color:#666;margin-bottom:6px;">
+      Only works after the deadline has passed.
+      Sends tokens to seller and announces the winner.
+    </p>
+    <button class="yellow" onclick="finalizeAuction()">
+      Finalize Auction
+    </button>
+  </div>
+
+  <!-- CANCEL -->
+  <div class="card">
+    <h2>❌ Cancel Auction</h2>
+    <p style="font-size:0.82rem;color:#666;margin-bottom:6px;">
+      Only the seller can cancel.
+      This only works if zero bids have been placed.
+    </p>
+    <button class="red" onclick="cancelAuction()">
+      Cancel Auction
+    </button>
+  </div>
+
+  <!-- LOG -->
+  <div class="card">
+    <h2>📜 Activity Log</h2>
+    <div id="log">No activity yet...</div>
+  </div>
+
+</div>
+
+<!-- Stellar JavaScript SDK -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stellar-sdk/11.3.0/stellar-sdk.min.js"></script>
+
+<script>
+
+  // PUT YOUR CONTRACT ID HERE AFTER DEPLOYING
+  const CONTRACT_ID = "YOUR_CONTRACT_ID_HERE";
+
+  const RPC_URL     = "https://soroban-testnet.stellar.org";
+  const NETWORK     = "TESTNET";
+  const PASSPHRASE  = StellarSdk.Networks.TESTNET;
+
+  let myWallet = null;
+
+  // add a message to the log box at the bottom
+  function addLog(msg) {
+    const box  = document.getElementById("log");
+    const time = new Date().toLocaleTimeString();
+    box.innerHTML = `[${time}]  ${msg}\n` + box.innerHTML;
+  }
+
+  // connect freighter wallet
+  async function connectWallet() {
+    try {
+      if (!window.freighter) {
+        alert("Please install the Freighter wallet!\nGet it at: freighter.app");
+        return;
+      }
+      await window.freighter.setAllowed();
+      myWallet = await window.freighter.getPublicKey();
+      document.getElementById("walletAddr").textContent =
+        "✅ Connected: " + myWallet;
+      addLog("Wallet connected: " + myWallet.slice(0,16) + "...");
+    } catch (e) {
+      addLog("❌ Could not connect wallet: " + e.message);
+    }
+  }
+
+  // load and show auction status
+  async function loadStatus() {
+    try {
+      addLog("Loading auction info...");
+
+      const server  = new StellarSdk.SorobanRpc.Server(RPC_URL);
+      const acctId  = myWallet ||
+        "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN";
+      const account  = await server.getAccount(acctId);
+      const contract = new StellarSdk.Contract(CONTRACT_ID);
+
+      // helper to simulate a read-only call
+      async function read(fn) {
+        const tx = new StellarSdk.TransactionBuilder(account, {
+          fee: "100",
+          networkPassphrase: PASSPHRASE,
+        })
+          .addOperation(contract.call(fn))
+          .setTimeout(30)
+          .build();
+        const sim = await server.simulateTransaction(tx);
+        return StellarSdk.scValToNative(sim.result.retval);
+      }
+
+      const name    = await read("get_item_name");
+      const minBid  = await read("get_min_bid");
+      const highBid = await read("get_highest_bid");
+      const bidder  = await read("get_highest_bidder");
+      const dl      = await read("get_deadline");
+      const status  = await read("get_status");
+
+      document.getElementById("sItem").textContent =
+        name;
+      document.getElementById("sMinBid").textContent =
+        (Number(minBid) / 1e7).toFixed(2) + " tokens";
+      document.getElementById("sHighBid").textContent =
+        (Number(highBid) / 1e7).toFixed(2) + " tokens";
+      document.getElementById("sBidder").textContent =
+        bidder ? bidder.slice(0,14) + "..." : "No bids yet";
+      document.getElementById("sDeadline").textContent = dl;
+
+      const badges = {
+        Active:    '<span class="badge active">Active</span>',
+        Finalized: '<span class="badge finalized">Finalized</span>',
+        Cancelled: '<span class="badge cancelled">Cancelled</span>',
+      };
+      document.getElementById("sStatus").innerHTML =
+        badges[status] || status;
+
+      addLog("✅ Status loaded");
+    } catch (e) {
+      addLog("❌ Load failed: " + e.message);
+    }
+  }
+
+  // sign a transaction with freighter and send it
+  async function sendTx(tx) {
+    const server = new StellarSdk.SorobanRpc.Server(RPC_URL);
+    const ready  = await server.prepareTransaction(tx);
+    const signed = await window.freighter.signTransaction(
+      ready.toXDR(), { network: NETWORK }
+    );
+    const env = StellarSdk.TransactionBuilder.fromXDR(signed, PASSPHRASE);
+    return server.sendTransaction(env);
+  }
+
+  // build a basic transaction
+  async function buildTx(operation) {
+    const server  = new StellarSdk.SorobanRpc.Server(RPC_URL);
+    const account = await server.getAccount(myWallet);
+    return new StellarSdk.TransactionBuilder(account, {
+      fee: "100",
+      networkPassphrase: PASSPHRASE,
+    })
+      .addOperation(operation)
+      .setTimeout(30)
+      .build();
+  }
+
+  // create a new auction
+  async function createAuction() {
+    if (!myWallet) { alert("Connect wallet first!"); return; }
+    try {
+      const name  = document.getElementById("itemName").value;
+      const min   = parseInt(document.getElementById("minBid").value) * 1e7;
+      const dur   = parseInt(document.getElementById("duration").value);
+      const token = document.getElementById("tokenAddr").value;
+
+      addLog("Creating auction for: " + name);
+
+      const contract = new StellarSdk.Contract(CONTRACT_ID);
+      const op = contract.call(
+        "create_auction",
+        StellarSdk.Address.fromString(myWallet).toScVal(),
+        StellarSdk.Address.fromString(token).toScVal(),
+        StellarSdk.nativeToScVal(name,  { type: "string" }),
+        StellarSdk.nativeToScVal(min,   { type: "i128" }),
+        StellarSdk.nativeToScVal(dur,   { type: "u32" }),
+      );
+
+      const result = await sendTx(await buildTx(op));
+      addLog("✅ Auction created! TX: " + result.hash.slice(0,14) + "...");
+    } catch (e) {
+      addLog("❌ Create failed: " + e.message);
+    }
+  }
+
+  // place a bid
+  async function placeBid() {
+    if (!myWallet) { alert("Connect wallet first!"); return; }
+    try {
+      const amt = parseInt(document.getElementById("bidAmt").value) * 1e7;
+      addLog("Placing bid...");
+
+      const contract = new StellarSdk.Contract(CONTRACT_ID);
+      const op = contract.call(
+        "place_bid",
+        StellarSdk.Address.fromString(myWallet).toScVal(),
+        StellarSdk.nativeToScVal(amt, { type: "i128" }),
+      );
+
+      const result = await sendTx(await buildTx(op));
+      addLog("✅ Bid placed! TX: " + result.hash.slice(0,14) + "...");
+    } catch (e) {
+      addLog("❌ Bid failed: " + e.message);
+    }
+  }
+
+  // finalize auction
+  async function finalizeAuction() {
+    if (!myWallet) { alert("Connect wallet first!"); return; }
+    try {
+      addLog("Finalizing auction...");
+      const contract = new StellarSdk.Contract(CONTRACT_ID);
+      const op = contract.call("finalize_auction");
+      const result = await sendTx(await buildTx(op));
+      addLog("✅ Auction finalized! TX: " + result.hash.slice(0,14) + "...");
+    } catch (e) {
+      addLog("❌ Finalize failed: " + e.message);
+    }
+  }
+
+  // cancel auction
+  async function cancelAuction() {
+    if (!myWallet) { alert("Connect wallet first!"); return; }
+    try {
+      addLog("Cancelling auction...");
+      const contract = new StellarSdk.Contract(CONTRACT_ID);
+      const op = contract.call("cancel_auction");
+      const result = await sendTx(await buildTx(op));
+      addLog("✅ Auction cancelled! TX: " + result.hash.slice(0,14) + "...");
+    } catch (e) {
+      addLog("❌ Cancel failed: " + e.message);
+    }
+  }
+
+</script>
+</body>
+</html>
